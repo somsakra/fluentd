@@ -16,6 +16,6 @@ docker network create efk
 docker-compose up
 ```
 ***
-fluentd container may be need linux environment for build
+fluentd container may need linux environment for build
 
 
