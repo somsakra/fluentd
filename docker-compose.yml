@@ -1,0 +1,72 @@
+version: '3.8'
+services:
+  fluentd:
+    # image: 'fluent/fluentd'
+    build: .
+    container_name: 'fluentd'
+    volumes:
+      - type: bind
+        source: ./fluentd-data
+        target: /fluentd/log
+      - type: bind
+        source: ./fluentd-config
+        target: /fluentd/etc
+    ports:
+      - 24224:24224
+      - 24224:24224/udp
+    networks:
+      - default
+
+  elasticsearch:
+    image: 'elasticsearch:7.8.1'
+    container_name: 'elasticsearch'
+    environment:
+      - discovery.type=single-node
+    volumes:
+      - type: bind
+        source: ./elasticsearch-volume
+        target: /usr/share/elasticsearch/data
+    # ports:
+    #   - 9200:9200
+    networks:
+      - default
+
+  kibana:
+    image: 'kibana:7.8.1'
+    container_name: 'kibana'
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - 5601:5601
+    networks: 
+      - default
+
+  httpd:
+    image: httpd   
+    container_name: httpd 
+    depends_on:
+      - fluentd
+    # volumes:
+    #   - type: bind
+    #     source: ./html
+    #     target: /var/www/html
+    #   - type: bind
+    #     source: ./nginx/conf/nginx.conf
+    #     target: /etc/nginx/conf/nginx.conf
+    #   - type: bind
+    #     source: ./nginx/conf.d/default.conf
+    #     target: /etc/nginx/conf.d/default.conf
+    ports:
+      - 80:80
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        tag: httpd.access
+    networks:
+      - default
+
+networks:
+  default:
+    external: 
+      name: efk
